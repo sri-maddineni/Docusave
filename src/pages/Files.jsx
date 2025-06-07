@@ -134,98 +134,109 @@ const Files = () => {
 
 
   const renderPreview = file => {
-    if (!file || !file.fileData) return null;
+  if (!file || !file.fileData) return null;
 
-    const fileType = getFileTypeFromData(file.fileData);
-    const base64String = file.fileData;
+  const fileType = getFileTypeFromData(file.fileData);
+  const base64String = file.fileData;
 
-    const previewStyle = {
-      width: '400px',
-      height: '300px',
-      border: '1px solid #ddd',
-      borderRadius: '0.5rem',
-      overflow: 'hidden',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-      margin: '5px',
-    };
+  const previewStyle = {
+    width: '100%',
+    aspectRatio: '4/3', // Maintain aspect ratio
+    border: '1px solid #ddd',
+    borderRadius: '0.5rem',
+    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    margin: '5px 0',
+  };
 
-    const getTextPreview = text => {
-      if (text.length > 200) return text.slice(0, 200) + '...';
-      return text;
-    };
+  const getTextPreview = text => {
+    if (text.length > 200) return text.slice(0, 200) + '...';
+    return text;
+  };
 
-    if (fileType.startsWith('image/')) {
-      return (
-        <div style={previewStyle}>
-          <img
-            src={base64String}
-            alt="Preview"
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (fileType === 'application/pdf') {
-      return (
-        <div style={previewStyle}>
-          <iframe
-            src={base64String + '#toolbar=0&navpanes=0&scrollbar=0'}
-            title="PDF Preview"
-            style={{ width: '100%', height: '100%', border: 'none' }}
-          />
-        </div>
-      );
-    }
-
-    if (fileType.startsWith('text/')) {
-      const decodedText = atob(base64String.split(',')[1]);
-      const previewText = getTextPreview(decodedText);
-      return (
-        <div
-          style={{
-            ...previewStyle,
-            padding: '1rem',
-            overflowY: 'auto',
-            whiteSpace: 'pre-wrap',
-            fontFamily: 'monospace',
-            fontSize: '0.9rem',
-            color: '#333',
-            textAlign: 'left',
-          }}
-          title="Text Preview"
-        >
-          {previewText}
-        </div>
-      );
-    }
-
+  if (fileType.startsWith('image/')) {
     return (
       <div style={previewStyle}>
-        <div style={{ padding: '1rem', textAlign: 'center' }}>
-          <p>
-            <strong>Name:</strong> {file.name}
-          </p>
-          <p>
-            <strong>Type:</strong> {file.type}
-          </p>
-          <p>
-            <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
-          </p>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666' }}>
-            Preview not available for this file type.
-          </p>
-        </div>
+        <img
+          src={base64String}
+          alt="Preview"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
+        />
       </div>
     );
-  };
+  }
+
+  if (fileType === 'application/pdf') {
+    return (
+      <div style={previewStyle}>
+        <iframe
+          src={base64String + '#toolbar=0&navpanes=0&scrollbar=0'}
+          title="PDF Preview"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (fileType.startsWith('text/')) {
+    const decodedText = atob(base64String.split(',')[1]);
+    const previewText = getTextPreview(decodedText);
+    return (
+      <div
+        style={{
+          ...previewStyle,
+          padding: '0.5rem',
+          overflowY: 'auto',
+          whiteSpace: 'pre-wrap',
+          fontFamily: 'monospace',
+          fontSize: '0.9rem',
+          color: '#333',
+          textAlign: 'left',
+        }}
+        title="Text Preview"
+      >
+        {previewText}
+      </div>
+    );
+  }
+
+  return (
+    <div style={previewStyle}>
+      <div style={{ padding: '1rem', textAlign: 'center' }}>
+        <p>
+          <strong>Name:</strong> {file.name}
+        </p>
+        <p>
+          <strong>Type:</strong> {file.type}
+        </p>
+        <p>
+          <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
+        </p>
+        <p
+          style={{
+            marginTop: '0.5rem',
+            fontSize: '0.85rem',
+            color: '#666',
+          }}
+        >
+          Preview not available for this file type.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 
   if (loading && localuser) {
     return (

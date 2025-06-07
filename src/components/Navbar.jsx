@@ -18,23 +18,23 @@ const Navbar = () => {
                     <div className="flex space-x-4">
                         <Link
                             to="/"
-                            className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
+                            className="flex items-center px-1 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
                         >
-                            <HomeIcon className="h-5 w-5 mr-2 group-hover:text-blue-400" />
+                            <HomeIcon className="h-5 w-5 mr-1 group-hover:text-blue-400" />
                             <span>Home</span>
                         </Link>
                         <Link
                             to="/files"
-                            className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
+                            className="flex items-center px-1 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
                         >
-                            <DocumentArrowDownIcon className="h-5 w-5 mr-2 group-hover:text-blue-400" />
+                            <DocumentArrowDownIcon className="h-5 w-5 mr-1 group-hover:text-blue-400" />
                             <span>Files</span>
                         </Link>
                         <Link
                             to="/account"
-                            className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
+                            className="flex items-center px-1 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
                         >
-                            <UserCircleIcon className="h-5 w-5 mr-2 group-hover:text-blue-400" />
+                            <UserCircleIcon className="h-5 w-5 mr-1 group-hover:text-blue-400" />
                             <span>Account</span>
                         </Link>
                     </div>
