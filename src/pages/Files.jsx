@@ -174,20 +174,42 @@ const Files = () => {
   }
 
   if (fileType === 'application/pdf') {
-    return (
-      <div style={previewStyle}>
-        <iframe
-          src={base64String + '#toolbar=0&navpanes=0&scrollbar=0'}
-          title="PDF Preview"
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-          }}
-        />
-      </div>
-    );
-  }
+  return (
+    <div style={{
+      ...previewStyle,
+      flexDirection: 'column',
+      textAlign: 'center',
+      padding: '1rem',
+    }}>
+      <img
+        src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" // or your own PDF icon
+        alt="PDF icon"
+        style={{ width: '40px', height: '40px', marginBottom: '0.5rem' }}
+      />
+      <p style={{ fontSize: '0.9rem', color: '#555' }}>
+        PDF file preview
+      </p>
+      <a
+        href={base64String}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-block',
+          marginTop: '0.5rem',
+          padding: '0.5rem 1rem',
+          backgroundColor: '#007bff',
+          color: '#fff',
+          borderRadius: '4px',
+          textDecoration: 'none',
+          fontSize: '0.9rem',
+        }}
+      >
+        Open PDF
+      </a>
+    </div>
+  );
+}
+
 
   if (fileType.startsWith('text/')) {
     const decodedText = atob(base64String.split(',')[1]);
