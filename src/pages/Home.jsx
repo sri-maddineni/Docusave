@@ -64,6 +64,16 @@ const Home = () => {
         try {
             if (!file || !base64String || !filename || !filecategory) {
                 alert("Please provide all required fields and select a file.");
+                setLoading(false)
+                return;
+            }
+
+            const maxSize = 1 * 1024 * 1024;
+            if (file.size >= maxSize) {
+                alert("File size exceeds 1MB. Please select a smaller file.");
+                setFile(null)
+                window.location.reload()
+                setLoading(false)
                 return;
             }
 
@@ -94,11 +104,14 @@ const Home = () => {
             setFiledes("");
             setTags([]);
             setFilecategory("");
+            setLoading(false)
         } catch (error) {
             console.error("Error uploading file:", error);
             setLoading(false)
             alert("Failed to upload file. Please try again." + error);
+            setLoading(false)
         }
+        setLoading(false)
     };
 
 
