@@ -15,6 +15,8 @@ const Account = () => {
     const [name, setName] = useState("")
     const [user, setUser] = useState(null)
 
+    const [loading, setLoading] = useState(false)
+
 
 
     const app = initializeApp(firebaseConfig)
@@ -54,6 +56,8 @@ const Account = () => {
     const handleLogin = async (e) => {
         //i want to fetch all the docs form a path
         e.preventDefault();
+        setLoading(true)
+
 
         try {
             // Reference to the collection
@@ -83,6 +87,7 @@ const Account = () => {
                     found = true;
                     setLoggedIn(true)
                     setUser(JSON.parse(localStorage.getItem("docusave-user")))
+                    setLoading(false)
                     return;
                 }
             });
@@ -90,14 +95,12 @@ const Account = () => {
 
             found ? "" : console.log("not found")
 
-
-
-
-
+            setLoading(false)
 
             // Do something with the data if needed
             //  console.log("Fetched documents:", querySnapshot.docs.map((d) => d.data()));
         } catch (error) {
+            setLoading(false)
             console.error("Error fetching documents:", error);
         }
 
@@ -180,6 +183,17 @@ const Account = () => {
         console.log(newitem)
     }
 
+    if (loading) {
+        return (
+            <>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="max-w-md mx-auto">
+                       <h2 className='text-3xl font-semibold text-gray-800'>please wait, while we login you!</h2>
+                    </div>
+                </div>
+            </>)
+    }
+
     if (!loggedIn) {
         return (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -221,8 +235,8 @@ const Account = () => {
 
     const tabs = [
         { id: 'profile', name: 'Profile', icon: UserCircleIcon },
-        { id: 'notifications', name: 'Notifications', icon: BellIcon },
-        { id: 'security', name: 'Security', icon: ShieldCheckIcon },
+        // { id: 'notifications', name: 'Notifications', icon: BellIcon },
+        // { id: 'security', name: 'Security', icon: ShieldCheckIcon },
     ]
 
     return (
@@ -231,7 +245,7 @@ const Account = () => {
                 <h1 className="text-3xl font-bold text-gray-800">Account Settings</h1>
                 <button
                     onClick={handleLogout}
-                    className="px-4 py-2 text-sm text-red-600 hover:text-red-700"
+                    className="px-4 py-2 text-2xl font-semibold bg-red-900 rounded-md text-gray-200 hover:bg-red-500"
                 >
                     Sign Out
                 </button>
@@ -281,21 +295,18 @@ const Account = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                                    <input
-                                        type="text"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        defaultValue={user?.name}
-                                    />
+                                    <p>{user?.name}</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Email</label>
-                                    <input
-                                        type="email"
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        defaultValue={user?.email}
-                                    />
+                                    <p>{user?.email}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">User id</label>
+                                    <p>{user?.uid}</p>
                                 </div>
                             </div>
+                            
                         </div>
                     )}
 
