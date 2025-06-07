@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { HomeIcon, UserCircleIcon } from '@heroicons/react/24/outline'
+import { DocumentArrowDownIcon, HomeIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 
 const Navbar = () => {
     return (
@@ -22,6 +22,13 @@ const Navbar = () => {
                         >
                             <HomeIcon className="h-5 w-5 mr-2 group-hover:text-blue-400" />
                             <span>Home</span>
+                        </Link>
+                        <Link
+                            to="/files"
+                            className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition duration-150 ease-in-out group"
+                        >
+                            <DocumentArrowDownIcon className="h-5 w-5 mr-2 group-hover:text-blue-400" />
+                            <span>Files</span>
                         </Link>
                         <Link
                             to="/account"

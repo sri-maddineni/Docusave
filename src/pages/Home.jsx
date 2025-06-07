@@ -267,6 +267,7 @@ const Home = () => {
                                 file:bg-blue-50 file:text-blue-700
                                 hover:file:bg-blue-100"
                         />
+                        <p>Make sure file size is less than 1MB</p>
                         <div className="mt-4 space-x-4 text-center">
                             <form className='flex flex-col'>
                                 <input value={filename} onChange={(e) => { setFilename(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file name' />
