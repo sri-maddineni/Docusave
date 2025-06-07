@@ -197,7 +197,7 @@ const Files = () => {
     );
   };
 
-  if (loading) {
+  if (loading && localuser) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         Fetching your stored files, please wait...
@@ -212,7 +212,7 @@ const Files = () => {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-800 mb-2">Tags</h4>
+        <h4 className="font-semibold text-gray-800 mb-2">{localuser?"Tags":""}</h4>
         <div className="flex flex-wrap gap-2 mb-8">
           {alltags.length > 0 ? (
             alltags.map((tag, index) => (
@@ -224,7 +224,7 @@ const Files = () => {
               </span>
             ))
           ) : (
-            <span className="text-gray-400 italic">No tags found</span>
+            localuser && <span className="text-gray-400 italic">No tags found</span>
           )}
         </div>
       </div>

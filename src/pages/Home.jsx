@@ -60,8 +60,14 @@ const Home = () => {
 
 
     const handleUpload = async () => {
-        setLoading(true)
+        
         try {
+
+            if (!file) {
+                alert("File not found! please select a file first")
+                setLoading(false)
+                return null;
+            }
             if (!file || !base64String || !filename || !filecategory) {
                 alert("Please provide all required fields and select a file.");
                 setLoading(false)
@@ -93,6 +99,8 @@ const Home = () => {
                 }
             };
 
+            setLoading(true)
+
             await addDoc(colRef, uploadData);
 
             alert("File uploaded successfully!");
@@ -116,6 +124,7 @@ const Home = () => {
 
 
     const renderPreview = () => {
+
         if (!preview || !file || !base64String) return null
 
         const fileType = file.type
