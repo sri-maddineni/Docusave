@@ -66,6 +66,36 @@ const Files = () => {
     return match && match[1] ? match[1] : 'unknown';
   };
 
+  const handleOpen = (file) => {
+    if (!file || !file.fileData) {
+      console.error("File data is missing");
+      return;
+    }
+
+    const base64Parts = file.fileData.split(',');
+    if (base64Parts.length !== 2) {
+      console.error("Invalid file data format");
+      return;
+    }
+
+    const mimeTypeMatch = base64Parts[0].match(/:(.*?);/);
+    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/octet-stream';
+    const byteCharacters = atob(base64Parts[1]);
+
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: mimeType });
+
+    const fileURL = URL.createObjectURL(blob);
+
+    // Open the file in a new tab
+    window.open(fileURL, '_blank');
+  };
+
+
   const handleDownload = (file) => {
     if (!file || !file.fileData || !file.filename) {
       console.error("File data is missing or incomplete");
@@ -212,7 +242,7 @@ const Files = () => {
       </div>
 
       <div>
-        <h4 className="font-semibold text-gray-800 mb-2">{localuser?"Tags":""}</h4>
+        <h4 className="font-semibold text-gray-800 mb-2">{localuser ? "Tags" : ""}</h4>
         <div className="flex flex-wrap gap-2 mb-8">
           {alltags.length > 0 ? (
             alltags.map((tag, index) => (
@@ -270,12 +300,20 @@ const Files = () => {
                     <span className="text-gray-400 text-xs italic">No tags</span>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDownload(file)}
-                  className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  Download
-                </button>
+                <div>
+                  <button
+                    onClick={() => handleDownload(file)}
+                    className="mt-4 mx-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Download
+                  </button>
+                  <button
+                    onClick={() => { handleOpen(file) }}
+                    className="mt-4 mx-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Open in new tab
+                  </button>
+                </div>
 
               </div>
             </div>
