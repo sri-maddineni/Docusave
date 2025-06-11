@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import React, { useEffect, useState } from 'react';
 import { firebaseConfig } from './../constants';
-import { collection, getDocs, getFirestore } from 'firebase/firestore';
+import { collection, getDocs, getFirestore, deleteDoc, doc } from 'firebase/firestore';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 const Files = () => {
   const [files, setFiles] = useState([]);
@@ -134,131 +135,144 @@ const Files = () => {
 
 
   const renderPreview = file => {
-  if (!file || !file.fileData) return null;
+    if (!file || !file.fileData) return null;
 
-  const fileType = getFileTypeFromData(file.fileData);
-  const base64String = file.fileData;
+    const fileType = getFileTypeFromData(file.fileData);
+    const base64String = file.fileData;
 
-  const previewStyle = {
-    width: '100%',
-    aspectRatio: '4/3', // Maintain aspect ratio
-    border: '1px solid #ddd',
-    borderRadius: '0.5rem',
-    overflow: 'hidden',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    margin: '5px 0',
-  };
+    const previewStyle = {
+      width: '100%',
+      aspectRatio: '4/3', // Maintain aspect ratio
+      border: '1px solid #ddd',
+      borderRadius: '0.5rem',
+      overflow: 'hidden',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      margin: '5px 0',
+    };
 
-  const getTextPreview = text => {
-    if (text.length > 200) return text.slice(0, 200) + '...';
-    return text;
-  };
+    const getTextPreview = text => {
+      if (text.length > 200) return text.slice(0, 200) + '...';
+      return text;
+    };
 
-  if (fileType.startsWith('image/')) {
+    if (fileType.startsWith('image/')) {
+      return (
+        <div style={previewStyle}>
+          <img
+            src={base64String}
+            alt="Preview"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (fileType === 'application/pdf') {
+      return (
+        <div style={{
+          ...previewStyle,
+          flexDirection: 'column',
+          textAlign: 'center',
+          padding: '1rem',
+        }}>
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" // or your own PDF icon
+            alt="PDF icon"
+            style={{ width: '40px', height: '40px', marginBottom: '0.5rem' }}
+          />
+          <p style={{ fontSize: '0.9rem', color: '#555' }}>
+            PDF file preview
+          </p>
+          <a
+            href={base64String}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block',
+              marginTop: '0.5rem',
+              padding: '0.5rem 1rem',
+              backgroundColor: '#007bff',
+              color: '#fff',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+            }}
+          >
+            Open PDF
+          </a>
+        </div>
+      );
+    }
+
+
+    if (fileType.startsWith('text/')) {
+      const decodedText = atob(base64String.split(',')[1]);
+      const previewText = getTextPreview(decodedText);
+      return (
+        <div
+          style={{
+            ...previewStyle,
+            padding: '0.5rem',
+            overflowY: 'auto',
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'monospace',
+            fontSize: '0.9rem',
+            color: '#333',
+            textAlign: 'left',
+          }}
+          title="Text Preview"
+        >
+          {previewText}
+        </div>
+      );
+    }
+
     return (
       <div style={previewStyle}>
-        <img
-          src={base64String}
-          alt="Preview"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-          }}
-        />
+        <div style={{ padding: '1rem', textAlign: 'center' }}>
+          <p>
+            <strong>Name:</strong> {file.name}
+          </p>
+          <p>
+            <strong>Type:</strong> {file.type}
+          </p>
+          <p>
+            <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
+          </p>
+          <p
+            style={{
+              marginTop: '0.5rem',
+              fontSize: '0.85rem',
+              color: '#666',
+            }}
+          >
+            Preview not available for this file type.
+          </p>
+        </div>
       </div>
     );
-  }
+  };
 
-  if (fileType === 'application/pdf') {
-  return (
-    <div style={{
-      ...previewStyle,
-      flexDirection: 'column',
-      textAlign: 'center',
-      padding: '1rem',
-    }}>
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" // or your own PDF icon
-        alt="PDF icon"
-        style={{ width: '40px', height: '40px', marginBottom: '0.5rem' }}
-      />
-      <p style={{ fontSize: '0.9rem', color: '#555' }}>
-        PDF file preview
-      </p>
-      <a
-        href={base64String}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: 'inline-block',
-          marginTop: '0.5rem',
-          padding: '0.5rem 1rem',
-          backgroundColor: '#007bff',
-          color: '#fff',
-          borderRadius: '4px',
-          textDecoration: 'none',
-          fontSize: '0.9rem',
-        }}
-      >
-        Open PDF
-      </a>
-    </div>
-  );
-}
-
-
-  if (fileType.startsWith('text/')) {
-    const decodedText = atob(base64String.split(',')[1]);
-    const previewText = getTextPreview(decodedText);
-    return (
-      <div
-        style={{
-          ...previewStyle,
-          padding: '0.5rem',
-          overflowY: 'auto',
-          whiteSpace: 'pre-wrap',
-          fontFamily: 'monospace',
-          fontSize: '0.9rem',
-          color: '#333',
-          textAlign: 'left',
-        }}
-        title="Text Preview"
-      >
-        {previewText}
-      </div>
-    );
-  }
-
-  return (
-    <div style={previewStyle}>
-      <div style={{ padding: '1rem', textAlign: 'center' }}>
-        <p>
-          <strong>Name:</strong> {file.name}
-        </p>
-        <p>
-          <strong>Type:</strong> {file.type}
-        </p>
-        <p>
-          <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
-        </p>
-        <p
-          style={{
-            marginTop: '0.5rem',
-            fontSize: '0.85rem',
-            color: '#666',
-          }}
-        >
-          Preview not available for this file type.
-        </p>
-      </div>
-    </div>
-  );
-};
-
+  const handleDelete = async (fileId) => {
+    if (window.confirm('Are you sure you want to delete this file?')) {
+      try {
+        const fileRef = doc(db, `/Certificates/lE90zcOTdBqwedh8iNhh/users/${localuser.uid}/certificates/${fileId}`);
+        await deleteDoc(fileRef);
+        // Refresh the files list
+        getFiles();
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        alert("Failed to delete file. Please try again.");
+      }
+    }
+  };
 
   if (loading && localuser) {
     return (
@@ -302,9 +316,18 @@ const Files = () => {
               {renderPreview(file)}
 
               <div className="px-6 py-4">
-                <p className="font-semibold text-2xl text-gray-900 mb-2 truncate">
-                  {file.filename}
-                </p>
+                <div className="flex justify-between items-start">
+                  <p className="font-semibold text-2xl text-gray-900 mb-2 truncate">
+                    {file.filename}
+                  </p>
+                  <button
+                    onClick={() => handleDelete(file.id)}
+                    className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                    title="Delete file"
+                  >
+                    <TrashIcon className="h-6 w-6" />
+                  </button>
+                </div>
 
                 {file.description && (
                   <p className="text-gray-800 text-sm mb-3 line-clamp-3">
@@ -347,7 +370,6 @@ const Files = () => {
                     Open in new tab
                   </button>
                 </div>
-
               </div>
             </div>
           ))}
