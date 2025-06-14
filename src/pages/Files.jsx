@@ -1,13 +1,22 @@
 import { initializeApp } from 'firebase/app';
 import React, { useEffect, useState } from 'react';
 import { firebaseConfig } from './../constants';
-import { collection, getDocs, getFirestore, deleteDoc, doc } from 'firebase/firestore';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { collection, getDocs, getFirestore, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 const Files = () => {
   const [files, setFiles] = useState([]);
   const [alltags, setAlltags] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [editingFile, setEditingFile] = useState(null);
+  const [editForm, setEditForm] = useState({
+    filename: '',
+    description: '',
+    category: '',
+    tags: []
+  });
 
   const localuser = JSON.parse(localStorage.getItem('docusave-user'));
   const app = initializeApp(firebaseConfig);
@@ -49,15 +58,22 @@ const Files = () => {
     setAlltags([...new Set(tags)]); // Remove duplicates
   };
 
+  // Extract categories from files
+  const getCategories = () => {
+    const categories = files.map(file => file.category?.toLowerCase()).filter(Boolean);
+    setAllCategories([...new Set(categories)]); // Remove duplicates
+  };
+
   // Fetch files on mount
   useEffect(() => {
     getFiles();
   }, []);
 
-  // Update tags whenever files change
+  // Update tags and categories whenever files change
   useEffect(() => {
     if (files.length > 0) {
       getTags();
+      getCategories();
     }
   }, [files]);
 
@@ -274,6 +290,53 @@ const Files = () => {
     }
   };
 
+  const handleEdit = (file) => {
+    setEditingFile(file);
+    setEditForm({
+      filename: file.filename || '',
+      description: file.description || '',
+      category: file.category || '',
+      tags: file.tags || []
+    });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingFile) return;
+
+    try {
+      const fileRef = doc(db, `/Certificates/lE90zcOTdBqwedh8iNhh/users/${localuser.uid}/certificates/${editingFile.id}`);
+      await updateDoc(fileRef, {
+        filename: editForm.filename,
+        description: editForm.description,
+        category: editForm.category.toLowerCase(),
+        tags: editForm.tags
+      });
+
+      // Refresh the files list
+      getFiles();
+      setEditingFile(null);
+    } catch (error) {
+      console.error("Error updating file:", error);
+      alert("Failed to update file. Please try again.");
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingFile(null);
+    setEditForm({
+      filename: '',
+      description: '',
+      category: '',
+      tags: []
+    });
+  };
+
+  // Filter files based on selected category
+  const filteredFiles = selectedCategory
+    ? files.filter(file => file.category?.toLowerCase() === selectedCategory)
+    : files;
+
   if (loading && localuser) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -286,6 +349,28 @@ const Files = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 text-center text-lg font-semibold text-gray-700">
         All files can be seen here. Categories and tags filtering are possible.
+      </div>
+
+      <div className="mb-8">
+        <h4 className="font-semibold text-gray-800 mb-2">{localuser ? "Categories" : ""}</h4>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {allCategories.length > 0 ? (
+            allCategories.map((category, index) => (
+              <span
+                key={index}
+                onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                className={`inline-block rounded-full px-3 py-1 text-sm font-semibold cursor-pointer transition-colors duration-200 ${selectedCategory === category
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </span>
+            ))
+          ) : (
+            localuser && <span className="text-gray-400 italic">No categories found</span>
+          )}
+        </div>
       </div>
 
       <div>
@@ -306,9 +391,9 @@ const Files = () => {
         </div>
       </div>
 
-      {files.length > 0 ? (
+      {filteredFiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {files.map(file => (
+          {filteredFiles.map(file => (
             <div
               key={file.id}
               className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
@@ -320,13 +405,22 @@ const Files = () => {
                   <p className="font-semibold text-2xl text-gray-900 mb-2 truncate">
                     {file.filename}
                   </p>
-                  <button
-                    onClick={() => handleDelete(file.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors duration-200"
-                    title="Delete file"
-                  >
-                    <TrashIcon className="h-6 w-6" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(file)}
+                      className="text-blue-500 hover:text-blue-700 transition-colors duration-200"
+                      title="Edit file"
+                    >
+                      <PencilIcon className="h-6 w-6" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(file.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                      title="Delete file"
+                    >
+                      <TrashIcon className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
 
                 {file.description && (
@@ -377,6 +471,77 @@ const Files = () => {
       ) : (
         <div className="text-center text-gray-500 mt-12 text-lg">
           No files found!
+        </div>
+      )}
+
+      {editingFile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">Edit File Details</h3>
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Filename
+                </label>
+                <input
+                  type="text"
+                  value={editForm.filename}
+                  onChange={(e) => setEditForm({ ...editForm, filename: e.target.value })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  rows="3"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Tags (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={editForm.tags.join(', ')}
+                  onChange={(e) => setEditForm({ ...editForm, tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleEditCancel}
+                  className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
