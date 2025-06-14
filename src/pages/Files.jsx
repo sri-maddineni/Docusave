@@ -72,7 +72,7 @@ const Files = () => {
   // Update tags and categories whenever files change
   useEffect(() => {
     if (files.length > 0) {
-      getTags();
+      // getTags();
       getCategories();
     }
   }, [files]);
@@ -373,7 +373,7 @@ const Files = () => {
         </div>
       </div>
 
-      <div>
+      {/*<div>
         <h4 className="font-semibold text-gray-800 mb-2">{localuser ? "Tags" : ""}</h4>
         <div className="flex flex-wrap gap-2 mb-8">
           {alltags.length > 0 ? (
@@ -389,7 +389,7 @@ const Files = () => {
             localuser && <span className="text-gray-400 italic">No tags found</span>
           )}
         </div>
-      </div>
+      </div>*/}
 
       {filteredFiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
