@@ -13,7 +13,8 @@ const Home = () => {
     const [base64String, setBase64String] = useState(null)
     const [loggedIn, setLoggedIn] = useState(JSON.parse(localStorage.getItem("docusave-user")))
     const localuser = JSON.parse(localStorage.getItem("docusave-user"))
-
+    const [fileType, setFileType] = useState('regular') // 'regular' or 'large'
+    const [externalLink, setExternalLink] = useState('')
     const [loading, setLoading] = useState(false)
 
     //file details
@@ -28,7 +29,7 @@ const Home = () => {
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0]
-        if (!selectedFile) return
+        if (!selectedFile) return;
 
         // Reset states
         setFile(null)
@@ -60,27 +61,32 @@ const Home = () => {
 
 
     const handleUpload = async () => {
-        
         try {
-
-            if (!file) {
-                alert("File not found! please select a file first")
+            if (fileType === 'regular' && !file) {
+                alert("File not found! Please select a file first")
                 setLoading(false)
                 return null;
             }
-            if (!file || !base64String || !filename || !filecategory) {
-                alert("Please provide all required fields and select a file.");
+            if (fileType === 'large' && !externalLink) {
+                alert("Please provide an external link for the large file")
+                setLoading(false)
+                return null;
+            }
+            if (!filename || !filecategory) {
+                alert("Please provide all required fields.");
                 setLoading(false)
                 return;
             }
 
-            const maxSize = 1 * 1024 * 1024;
-            if (file.size >= maxSize) {
-                alert("File size exceeds 1MB. Please select a smaller file.");
-                setFile(null)
-                window.location.reload()
-                setLoading(false)
-                return;
+            if (fileType === 'regular') {
+                const maxSize = 1 * 1024 * 1024;
+                if (file.size >= maxSize) {
+                    alert("File size exceeds 1MB. Please select a smaller file or use the large file option.");
+                    setFile(null)
+                    window.location.reload()
+                    setLoading(false)
+                    return;
+                }
             }
 
             const colRef = collection(db, `/Certificates/lE90zcOTdBqwedh8iNhh/users/${localuser.uid}/certificates`);
@@ -88,9 +94,9 @@ const Home = () => {
             const uploadData = {
                 filename: filename,
                 description: filedes,
-                tags: tags.map(tag => tag.trim()), // ensure tags are trimmed
+                tags: tags.map(tag => tag.trim()),
                 category: filecategory,
-                fileData: base64String, // direct file data (consider using storage for larger files)
+                fileType: fileType,
                 createdAt: serverTimestamp(),
                 uploadedBy: {
                     name: localuser.name,
@@ -99,8 +105,14 @@ const Home = () => {
                 }
             };
 
-            setLoading(true)
+            // Add file data or external link based on file type
+            if (fileType === 'regular') {
+                uploadData.fileData = base64String;
+            } else {
+                uploadData.externalLink = externalLink;
+            }
 
+            setLoading(true)
             await addDoc(colRef, uploadData);
 
             alert("File uploaded successfully!");
@@ -112,6 +124,8 @@ const Home = () => {
             setFiledes("");
             setTags([]);
             setFilecategory("");
+            setExternalLink("");
+            setFileType('regular');
             setLoading(false)
         } catch (error) {
             console.error("Error uploading file:", error);
@@ -279,25 +293,71 @@ const Home = () => {
 
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
                     <div className="text-center">
-                        <input
-                            onChange={handleFileChange}
-                            type="file"
-                            className="block w-full text-sm text-gray-500
-                                file:mr-4 file:py-2 file:px-4
-                                file:rounded-md file:border-0
-                                file:text-sm file:font-semibold
-                                file:bg-blue-50 file:text-blue-700
-                                hover:file:bg-blue-100"
-                        />
-                        <p>Make sure file size is less than 1MB</p>
-                        <div className="mt-4 space-x-4 text-center">
-                            <form className='flex flex-col'>
-                                <input value={filename} onChange={(e) => { setFilename(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file name' />
-                                <textarea value={filedes} onChange={(e) => { setFiledes(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file description' />
-                                <input value={tags.join(',')} onChange={(e) => { setTags(e.target.value.split(',')) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file tags, seperated by commas (class xll, class x, btech for category certificates)' />
-                                <input value={filecategory} onChange={(e) => { setFilecategory(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter category (certificates, achievements, photos, travel)' />
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload New File</h2>
 
-                            </form>
+                        <div className="mb-6">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">
+                                File Type
+                            </label>
+                            <div className="flex gap-4">
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        value="regular"
+                                        checked={fileType === 'regular'}
+                                        onChange={(e) => setFileType(e.target.value)}
+                                        className="form-radio h-4 w-4 text-blue-600"
+                                    />
+                                    <span className="ml-2 text-gray-700">Regular File</span>
+                                </label>
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="radio"
+                                        value="large"
+                                        checked={fileType === 'large'}
+                                        onChange={(e) => setFileType(e.target.value)}
+                                        className="form-radio h-4 w-4 text-blue-600"
+                                    />
+                                    <span className="ml-2 text-gray-700">Large File</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {fileType === 'regular' ? (
+                            <div className="mb-6">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    Select File
+                                </label>
+                                <input
+                                    type="file"
+                                    onChange={handleFileChange}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                        ) : (
+                            <div className="mb-6">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">
+                                    External File Link
+                                </label>
+                                <input
+                                    type="url"
+                                    value={externalLink}
+                                    onChange={(e) => setExternalLink(e.target.value)}
+                                    placeholder="https://..."
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    required
+                                />
+                            </div>
+                        )}
+
+                        <form className='flex flex-col'>
+                            <input value={filename} onChange={(e) => { setFilename(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file name' />
+                            <textarea value={filedes} onChange={(e) => { setFiledes(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file description' />
+                            <input value={tags.join(',')} onChange={(e) => { setTags(e.target.value.split(',')) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter file tags, seperated by commas (class xll, class x, btech for category certificates)' />
+                            <input value={filecategory} onChange={(e) => { setFilecategory(e.target.value) }} className="border border-gray-300 rounded-md px-3 py-2 w-full mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500" type="text" placeholder='Enter category (certificates, achievements, photos, travel)' />
+
+                        </form>
+                        <div className="mt-4 space-x-4 text-center">
                             <button onClick={handleUpload}
                                 className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-200"
                             >

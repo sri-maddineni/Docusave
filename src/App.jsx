@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Account from './pages/Account'
 import NotFound from './pages/NotFound'
 import { Files } from './imports'
+import LargeFiles from './pages/LargeFiles'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/account" element={<Account />} />
             <Route path='/files' element={<Files />} />
+            <Route path='/large-files' element={<LargeFiles />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

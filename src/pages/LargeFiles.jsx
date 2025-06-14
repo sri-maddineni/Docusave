@@ -3,24 +3,21 @@ import React, { useEffect, useState } from 'react';
 import { firebaseConfig } from './../constants';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, getFirestore, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { TrashIcon, PencilIcon, PlusIcon, MinusIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PencilIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 
-const Files = () => {
+const LargeFiles = () => {
   const [files, setFiles] = useState([]);
   const [alltags, setAlltags] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedFileType, setSelectedFileType] = useState('all'); // 'all', 'regular', or 'large'
   const [editingFile, setEditingFile] = useState(null);
   const [editForm, setEditForm] = useState({
     filename: '',
     description: '',
     category: '',
     tags: [],
-    physicalCopies: 0,
-    fileType: 'regular', // 'regular' or 'large'
-    externalLink: '' // for large files
+    physicalCopies: 0
   });
 
   const localuser = JSON.parse(localStorage.getItem('docusave-user'));
@@ -43,18 +40,18 @@ const Files = () => {
       return;
     }
 
-    const filesData = docsSnap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-
+    const filesData = docsSnap.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter(file => file.fileType === 'large'); // Only get large files
 
     setFiles(filesData);
     setLoading(false);
   };
 
-  // Extract tags from files
+  // Extract tags from large files
   const getTags = () => {
     const tags = [];
     files.forEach(file => {
@@ -65,9 +62,12 @@ const Files = () => {
     setAlltags([...new Set(tags)]); // Remove duplicates
   };
 
-  // Extract categories from files
+  // Extract categories from large files
   const getCategories = () => {
-    const categories = files.map(file => file.category?.toLowerCase()).filter(Boolean);
+    const categories = files
+      .filter(file => file.fileType === 'large')
+      .map(file => file.category?.toLowerCase())
+      .filter(Boolean);
     setAllCategories([...new Set(categories)]); // Remove duplicates
   };
 
@@ -79,7 +79,7 @@ const Files = () => {
   // Update tags and categories whenever files change
   useEffect(() => {
     if (files.length > 0) {
-      // getTags();
+      getTags();
       getCategories();
     }
   }, [files]);
@@ -90,251 +90,67 @@ const Files = () => {
     return match && match[1] ? match[1] : 'unknown';
   };
 
-  const renderPreview = file => {
-    if (file.fileType === 'large') {
-      if (!file.externalLink) return null;
-      return (
-        <div style={{
-          width: '100%',
-          aspectRatio: '4/3',
-          border: '1px solid #ddd',
-          borderRadius: '0.5rem',
-          overflow: 'hidden',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#fff',
-          margin: '5px 0',
-          padding: '1rem',
-          flexDirection: 'column',
-          textAlign: 'center'
-        }}>
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/1200px-PDF_file_icon.svg.png"
-            alt="Large file icon"
-            style={{ width: '64px', height: '64px', marginBottom: '1rem' }}
-          />
-          <p style={{ fontSize: '1rem', color: '#555', marginBottom: '0.5rem' }}>
-            Large File
-          </p>
-          <a
-            href={file.externalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block',
-              padding: '0.5rem 1rem',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            View External File
-          </a>
-        </div>
-      );
-    }
-
-    if (!file || !file.fileData) return null;
-
-    const fileType = getFileTypeFromData(file.fileData);
-    const base64String = file.fileData;
-
-    const previewStyle = {
-      width: '100%',
-      aspectRatio: '4/3',
-      border: '1px solid #ddd',
-      borderRadius: '0.5rem',
-      overflow: 'hidden',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-      margin: '5px 0',
-    };
-
-    const getTextPreview = text => {
-      if (text.length > 200) return text.slice(0, 200) + '...';
-      return text;
-    };
-
-    if (fileType.startsWith('image/')) {
-      return (
-        <div style={previewStyle}>
-          <img
-            src={base64String}
-            alt="Preview"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-            }}
-          />
-        </div>
-      );
-    }
-
-    if (fileType === 'application/pdf') {
-      return (
-        <div style={{
-          ...previewStyle,
-          flexDirection: 'column',
-          textAlign: 'center',
-          padding: '1rem',
-        }}>
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg"
-            alt="PDF icon"
-            style={{ width: '40px', height: '40px', marginBottom: '0.5rem' }}
-          />
-          <p style={{ fontSize: '0.9rem', color: '#555' }}>
-            PDF file preview
-          </p>
-          <a
-            href={base64String}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block',
-              marginTop: '0.5rem',
-              padding: '0.5rem 1rem',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            Open PDF
-          </a>
-        </div>
-      );
-    }
-
-    if (fileType.startsWith('text/')) {
-      const decodedText = atob(base64String.split(',')[1]);
-      const previewText = getTextPreview(decodedText);
-      return (
-        <div
-          style={{
-            ...previewStyle,
-            padding: '0.5rem',
-            overflowY: 'auto',
-            whiteSpace: 'pre-wrap',
-            fontFamily: 'monospace',
-            fontSize: '0.9rem',
-            color: '#333',
-            textAlign: 'left',
-          }}
-          title="Text Preview"
-        >
-          {previewText}
-        </div>
-      );
-    }
-
-    return (
-      <div style={previewStyle}>
-        <div style={{ padding: '1rem', textAlign: 'center' }}>
-          <p>
-            <strong>Name:</strong> {file.name}
-          </p>
-          <p>
-            <strong>Type:</strong> {file.type}
-          </p>
-          <p>
-            <strong>Size:</strong> {(file.size / 1024).toFixed(2)} KB
-          </p>
-          <p
-            style={{
-              marginTop: '0.5rem',
-              fontSize: '0.85rem',
-              color: '#666',
-            }}
-          >
-            Preview not available for this file type.
-          </p>
-        </div>
-      </div>
-    );
-  };
-
   const handleOpen = (file) => {
-    if (file.fileType === 'large') {
-      if (!file.externalLink) {
-        console.error("External link is missing");
-        return;
-      }
-      window.open(file.externalLink, '_blank');
+    if (!file || !file.externalLink) {
+      console.error("External link is missing");
       return;
     }
-
-    if (!file || !file.fileData) {
-      console.error("File data is missing");
-      return;
-    }
-
-    const base64Parts = file.fileData.split(',');
-    if (base64Parts.length !== 2) {
-      console.error("Invalid file data format");
-      return;
-    }
-
-    const mimeTypeMatch = base64Parts[0].match(/:(.*?);/);
-    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/octet-stream';
-    const byteCharacters = atob(base64Parts[1]);
-
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
-
-    const fileURL = URL.createObjectURL(blob);
-    window.open(fileURL, '_blank');
+    window.open(file.externalLink, '_blank');
   };
 
   const handleDownload = (file) => {
-    if (file.fileType === 'large') {
-      if (!file.externalLink) {
-        console.error("External link is missing");
-        return;
-      }
-      window.open(file.externalLink, '_blank');
+    if (!file || !file.externalLink) {
+      console.error("External link is missing");
       return;
     }
+    window.open(file.externalLink, '_blank');
+  };
 
-    if (!file || !file.fileData || !file.filename) {
-      console.error("File data is missing or incomplete");
-      return;
-    }
+  const renderPreview = file => {
+    if (!file || !file.externalLink) return null;
 
-    const base64Parts = file.fileData.split(',');
-    if (base64Parts.length !== 2) {
-      console.error("Invalid file data format");
-      return;
-    }
-
-    const mimeTypeMatch = base64Parts[0].match(/:(.*?);/);
-    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/octet-stream';
-    const byteCharacters = atob(base64Parts[1]);
-
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = file.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    return (
+      <div style={{
+        width: '100%',
+        aspectRatio: '4/3',
+        border: '1px solid #ddd',
+        borderRadius: '0.5rem',
+        overflow: 'hidden',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        margin: '5px 0',
+        padding: '1rem',
+        flexDirection: 'column',
+        textAlign: 'center'
+      }}>
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/1200px-PDF_file_icon.svg.png"
+          alt="Large file icon"
+          style={{ width: '64px', height: '64px', marginBottom: '1rem' }}
+        />
+        <p style={{ fontSize: '1rem', color: '#555', marginBottom: '0.5rem' }}>
+          Large File
+        </p>
+        <a
+          href={file.externalLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-block',
+            padding: '0.5rem 1rem',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            borderRadius: '4px',
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+          }}
+        >
+          View External File
+        </a>
+      </div>
+    );
   };
 
   const handleDelete = async (fileId) => {
@@ -358,9 +174,7 @@ const Files = () => {
       description: file.description || '',
       category: file.category || '',
       tags: file.tags || [],
-      physicalCopies: file.physicalCopies || 0,
-      fileType: file.fileType || 'regular',
-      externalLink: file.externalLink || ''
+      physicalCopies: file.physicalCopies || 0
     });
   };
 
@@ -370,17 +184,13 @@ const Files = () => {
 
     try {
       const fileRef = doc(db, `/Certificates/lE90zcOTdBqwedh8iNhh/users/${localuser.uid}/certificates/${editingFile.id}`);
-      const updateData = {
+      await updateDoc(fileRef, {
         filename: editForm.filename,
         description: editForm.description,
         category: editForm.category.toLowerCase(),
         tags: editForm.tags,
-        physicalCopies: editForm.physicalCopies,
-        fileType: editForm.fileType,
-        ...(editForm.fileType === 'large' && { externalLink: editForm.externalLink })
-      };
-
-      await updateDoc(fileRef, updateData);
+        physicalCopies: editForm.physicalCopies
+      });
 
       // Refresh the files list
       getFiles();
@@ -398,9 +208,7 @@ const Files = () => {
       description: '',
       category: '',
       tags: [],
-      physicalCopies: 0,
-      fileType: 'regular',
-      externalLink: ''
+      physicalCopies: 0
     });
   };
 
@@ -424,12 +232,7 @@ const Files = () => {
 
   // Filter files based on selected category and file type
   const filteredFiles = files
-    .filter(file => {
-      if (selectedFileType === 'all') return true;
-      if (selectedFileType === 'regular') return !file.fileType || file.fileType === 'regular';
-      if (selectedFileType === 'large') return file.fileType === 'large';
-      return true;
-    })
+    .filter(file => file.fileType === 'large') // Only show large files
     .filter(file => !selectedCategory || file.category?.toLowerCase() === selectedCategory);
 
   if (loading && localuser) {
@@ -443,42 +246,7 @@ const Files = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 text-center text-lg font-semibold text-gray-700">
-        All files can be seen here. Categories and tags filtering are possible.
-      </div>
-
-      <div className="mb-8 flex justify-center gap-4">
-        <div className="flex items-center space-x-4 bg-white p-2 rounded-lg shadow">
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              value="all"
-              checked={selectedFileType === 'all'}
-              onChange={(e) => setSelectedFileType(e.target.value)}
-              className="form-radio h-4 w-4 text-blue-600"
-            />
-            <span className="ml-2 text-gray-700">All Files</span>
-          </label>
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              value="regular"
-              checked={selectedFileType === 'regular'}
-              onChange={(e) => setSelectedFileType(e.target.value)}
-              className="form-radio h-4 w-4 text-blue-600"
-            />
-            <span className="ml-2 text-gray-700">Regular Files</span>
-          </label>
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              value="large"
-              checked={selectedFileType === 'large'}
-              onChange={(e) => setSelectedFileType(e.target.value)}
-              className="form-radio h-4 w-4 text-blue-600"
-            />
-            <span className="ml-2 text-gray-700">Large Files</span>
-          </label>
-        </div>
+        Large files can be seen here. Categories filtering is possible.
       </div>
 
       <div className="mb-8">
@@ -536,11 +304,6 @@ const Files = () => {
                     <p className="font-semibold text-2xl text-gray-900 mb-2 truncate">
                       {file.filename}
                     </p>
-                    {file.fileType === 'large' && (
-                      <span className="bg-amber-500 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        Large File
-                      </span>
-                    )}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -564,19 +327,6 @@ const Files = () => {
                   <p className="text-gray-800 text-sm mb-3 line-clamp-3">
                     {file.description}
                   </p>
-                )}
-
-                {file.fileType === 'large' && file.externalLink && (
-                  <div className="mb-3">
-                    <a
-                      href={file.externalLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      View External File →
-                    </a>
-                  </div>
                 )}
 
                 <p className="text-gray-600 text-xs mb-4">
@@ -650,34 +400,6 @@ const Files = () => {
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  File Type
-                </label>
-                <div className="flex gap-4">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      value="regular"
-                      checked={editForm.fileType === 'regular'}
-                      onChange={(e) => setEditForm({ ...editForm, fileType: e.target.value })}
-                      className="form-radio h-4 w-4 text-blue-600"
-                    />
-                    <span className="ml-2 text-gray-700">Regular File</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      value="large"
-                      checked={editForm.fileType === 'large'}
-                      onChange={(e) => setEditForm({ ...editForm, fileType: e.target.value })}
-                      className="form-radio h-4 w-4 text-blue-600"
-                    />
-                    <span className="ml-2 text-gray-700">Large File</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
                   Filename
                 </label>
                 <input
@@ -688,23 +410,6 @@ const Files = () => {
                   required
                 />
               </div>
-
-              {editForm.fileType === 'large' && (
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    External File Link
-                  </label>
-                  <input
-                    type="url"
-                    value={editForm.externalLink}
-                    onChange={(e) => setEditForm({ ...editForm, externalLink: e.target.value })}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="https://..."
-                    required={editForm.fileType === 'large'}
-                  />
-                </div>
-              )}
-
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">
                   Description
@@ -774,4 +479,4 @@ const Files = () => {
   );
 };
 
-export default Files;
+export default LargeFiles;
